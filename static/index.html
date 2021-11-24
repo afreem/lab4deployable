@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz</title>
+</head>
+<body>
+    <h1>Quiz Tool</h1>
+    <a href="javascript:getQuestions()">Click here to restart or start the quiz</a>
+    <div id="questionDiv"></div>
+</body>
+
+<script>
+    //called everytime the readystate of a radio button changes
+    function checkQuestion(value,id)
+    {   
+        document.getElementByID
+        //Creates object
+        let xReq = new XMLHttpRequest();
+        //Adds functionality on state change
+        xReq.onreadystatechange = radioButtonStateChange;
+        //Configures object: GET request, products path, asynchronous set to true
+        xReq.open("GET","/updateBtn?value=" + value + "&id=" + id,true);
+        //Sends request
+        xReq.send();
+    }
+    function radioButtonStateChange()
+    {   
+        let msg = "";
+        let id = "";
+        if (this.readyState == 4 && this.status == 200)
+        {
+            if (this.responseText.substring(0,7) == "correct")
+            {
+                msg = "correct";
+                id = this.responseText.substring(8,this.responseText.length - 1);
+                document.getElementById(id).setAttribute("value","correct");
+            }
+            else
+            {
+                msg = "incorrect";
+                id = this.responseText.substring(10,this.responseText.length - 1);
+                document.getElementById(id).setAttribute("value","incorrect");
+
+            }
+            alert(msg);
+        }
+    }
+    //called everytime the readystate of the submit button changes
+    function checkAllQuestions()
+    {   
+        let x = '';
+        let i;
+        for (i = 0;document.getElementById(i)!=null;i++)
+        {
+            if (document.getElementById(i).getAttribute("value") == "correct")
+                x += "1";
+            else
+                x+= "0"; 
+        }
+        //Creates object
+        let xReq = new XMLHttpRequest();
+        //Adds functionality on state change
+        xReq.onreadystatechange = submitStateChange;
+        //Configures object: GET request, products path, asynchronous set to true
+        xReq.open("GET","/submitBtn?values=" + x,true);
+        //Sends request
+        xReq.send();
+    }
+    function submitStateChange()
+    {
+        if (this.readyState == 4 && this.status == 200)
+        {
+        alert(this.responseText);
+        getQuestions();
+        }
+    }
+    function getQuestions(){
+        //Creates object
+        let xReq = new XMLHttpRequest();
+        //Adds functionality on state change
+        xReq.onreadystatechange = displayQuestions;
+        //Configures object: GET request, products path, asynchronous set to true
+        xReq.open("GET","/questionsInJson",true);
+        //Sends request
+        xReq.send();
+    }
+    //Called everytime the readystate changes
+    function displayQuestions(){
+        //this.readyState
+            //Returns "1" = server connection established
+            //Returns "2" = request received
+            //Returns "3" = processing request
+            //Returns "4" = request finished and response is ready
+        //this.status
+            //Returns 200 if "OK"
+        //Check if response is ready
+            //this refers to the request object
+        if (this.readyState == 4 && this.status == 200)
+        {
+            //displays the contents of the products.json file upon clicking <a> tag above
+
+            //get the prodDiv element
+            let questionDiv = document.getElementById('questionDiv');
+            //sets the inner html to the response text
+            //prodDiv.innerHTML = this.responseText;
+
+            //This will parse the JSON string into an actual object that we can loop over
+            let questionList = JSON.parse(this.responseText);
+            let content = '';
+            let counter = 0;
+            let z = 0;
+            for (q of questionList)
+            {
+                content += `<br><br/><div id = ${z} value = "incorrect"> ${z+1}. ${q.stem}<br><br/>`;
+                let i = 0;
+                for (o of q.options)
+                {
+                content += `<input type="radio" onclick='javascript:checkQuestion(${i}, ${z})' id = ${z}${i} name=${z} value= ${i}>`;
+                content += `<label for="${o}">${o}</label><br>`;
+                i++;
+                }
+                z++;
+            }
+            content += `<br><input type="submit" id = "submitBtn" onclick='javascript:checkAllQuestions()' value="Submit">`;
+            //Gives the same result but saves the resourses of the server and sent request synchronously, also we didnt reload the page we just updated part of it
+            questionDiv.innerHTML = content;
+        }
+    }
+</script>
+
+</html>
